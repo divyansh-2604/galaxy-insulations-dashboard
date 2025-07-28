@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import os
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import (
     DateRange,
@@ -9,13 +8,14 @@ from google.analytics.data_v1beta.types import (
     RunReportRequest,
     RunRealtimeReportRequest,
 )
+from google.oauth2 import service_account
 
-# ✅ Set credentials and GA4 property
-KEY_PATH = r"C:\Users\Rajan Narula\Downloads\galaxy-insulations-dashboard-9f30440ad087.json"
+# ✅ Load credentials from Streamlit secrets
+creds_dict = st.secrets["ga4_service_account"]
+credentials = service_account.Credentials.from_service_account_info(dict(creds_dict))
+client = BetaAnalyticsDataClient(credentials=credentials)
+
 PROPERTY_ID = "498240746"
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = KEY_PATH
-
-client = BetaAnalyticsDataClient()
 
 # ✅ Safe conversion for null values
 def safe_int(value):
@@ -44,7 +44,6 @@ def get_historical_data():
             Metric(name="bounceRate"),
             Metric(name="engagementRate"),
             Metric(name="userEngagementDuration")
-            # REMOVED "views" – not a valid GA4 metric
         ],
         date_ranges=[DateRange(start_date="30daysAgo", end_date="today")]
     )
@@ -143,7 +142,7 @@ with col4:
     st.line_chart(history_df.set_index("Date")[["User Engagement (s)", "Avg. Session Duration (s)"]])
 
 st.subheader("🔁 Page Interactions")
-st.line_chart(history_df.set_index("Date")[["Page Views"]])  # Removed "Views"
+st.line_chart(history_df.set_index("Date")[["Page Views"]])
 
 st.markdown("---")
 st.caption("Powered by Streamlit & Google Analytics 4")
